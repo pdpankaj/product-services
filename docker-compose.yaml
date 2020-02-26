@@ -1,0 +1,38 @@
+version: '3'
+services:
+  products-mongodb:
+    image: mongo:3.6
+    restart: always
+    hostname: products-mongodb
+    environment:
+      - MONGO_DATA_DIR=/data/db
+      - MONGO_LOG_DIR=/dev/null
+    ports:
+      - 27017:27017
+    command: mongod --smallfiles --logpath=/dev/null # --quiet
+
+  products-mariadb:
+    image: mariadb
+    restart: always
+    hostname: products-mariadb
+    ports:
+      - 3306:3306
+    environment:
+      - MYSQL_RANDOM_ROOT_PASSWORD=true
+      - MYSQL_DATABASE=products
+      - MYSQL_PASSWORD=products
+      - MYSQL_USER=products
+
+  products-app:
+    image: products-app
+    build: .
+    ports:
+      - 8080:8080
+    depends_on:
+      - products-mongodb
+      - products-mariadb
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mariadb://products-mariadb:3306/products?useSSL=false&serverTimezone=UTC&useLegacyDatetimeCode=false
+      - SPRING_DATASOURCE_USERNAME=products
+      - SPRING_DATASOURCE_PASSWORD=products
+      - SPRING_DATA_MONGODB_URI=mongodb://products-mongodb:27017/products
